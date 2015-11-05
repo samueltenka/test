@@ -1,0 +1,54 @@
+Chess SVM
+by Samuel Tenka
+
+1. Introduction
+Chess engines usually look ahead a lot of moves in a gametree, evaluating each
+leaf with a hard-coded fitness function.  What if we try a different approach?
+Namely, look ahead very few moves, but have a very complex, machine-learned
+fitness function?  Not that the gametree method doesn't work --- it beats human
+grandmasters --- but it's interesting to consider this other way.
+
+Our general approach will be to look through grandmaster games<*> to generalize
+the rules of thumb "rook's are worth 5, knights are worth 3, etc.".  How much is
+a pawn on e5 worth, compared to one near the edge?  How much is castling worth?
+And so on.  To start, we'll have a basis of 12x64 piece-position vectors (e.g.
+"white queen on b3") and some special basis elements to encode whether each
+side has castled, and the en-passant-ability of each pawn.  So we'll have to
+find about 12x64=700 weights, which sounds feasible given the 10,000,000
+grandmaster decisions we'll be able to learn from (see <*>).  This might, in
+fact, be enough data to train the 700x700=490,000 weights we'd need if our
+features were every pair of piece-locations.  (I.e. taking tensor product of
+previous vector space with itself).
+
+<*> ~100 grandmasters, with ~1000 games each, with ~100 grandmaster decisions
+(i.e. plies) per game, gives ~1e7 decisions.  These are all available at
+<www.pgnmentor.com/files.html#players> in "pgn" format (Portable Game Notation). 
+
+
+2. Project Specs
+Chess SVM factors into 4 large chunks:
+(1) A database-reader that scrapes the pgns from <*> and converts them to:
+(2) An encoding of the rules of chess: provides a board-representation and from
+    any such representation, finds legal moves.  A "compressor" that converts a
+    complete-information board representation to a preprocessed feature vector.
+(3) A general-purpose game-learning algorithm, that learns from example
+    decisions, where a decision is a pair of vectors sorted by quality. The
+    algorithm should learn the quality or fitness function from these examples.
+(4) The engine that puts (1),(2),(3) together: our main() function.
+
+
+3. Algorithms
+How will the general-purpose 2.4 work?  Well, we don't actually have to learn a
+fitness function on board-vectors: since we only need say which of two given
+vectors is better, it is enough to learn a fitness function on differences of
+vectors.  To see whether x<y, ask, is f(y-x)>0? (May add arbitrary "potential").
+
+This reduces what seemed like a regression task to mere classification!  Each
+decision "x<y" we think of as labels "y-x is +", "x-y is -".  This duplicity we
+may ignore if we have no bias weight.
+
+I'll start off with a simple perceptron, then move to soft SVM.
+
+
+4. Implementation Notes
+Let's code this in C++.
