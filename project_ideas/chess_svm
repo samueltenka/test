@@ -51,4 +51,14 @@ I'll start off with a simple perceptron, then move to soft SVM.
 
 
 4. Implementation Notes
+File structure:
+*Position.h         represents a chess position
+*PosToVector.cpp    calculates vector representation of given chess position
+*MovesFrom.cpp      calculates possible positions from given position
+
 Let's code this in C++.
+
+
+
+
+
